@@ -66,39 +66,42 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 215 28% 12%;
+    /* Darkest theme - deep space aesthetic */
+    --background: 215 35% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 215 25% 16%;
+    --card: 215 32% 7%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 215 25% 16%;
+    --popover: 215 32% 8%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 186 95% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 25% 20%;
+    --secondary: 215 30% 12%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 215 25% 20%;
+    --muted: 215 28% 15%;
     --muted-foreground: 215 15% 65%;
 
-    --accent: 186 95% 48%;
+    --accent: 186 100% 42%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 25% 22%;
-    --input: 215 25% 22%;
+    --border: 215 28% 16%;
+    --input: 215 28% 14%;
     --ring: 186 95% 48%;
     
-    --shadow-soft: 0 6px 20px hsla(0 0% 0% / 0.25);
-    --shadow-card: 0 10px 32px hsla(0 0% 0% / 0.35);
-    --shadow-hover: 0 16px 48px hsla(186 95% 48% / 0.25);
-    --glass-bg: hsla(215 25% 18% / 0.6);
-    --glass-border: hsla(215 20% 40% / 0.2);
+    --shadow-soft: 0 8px 24px hsla(215 35% 2% / 0.55);
+    --shadow-card: 0 10px 32px hsla(215 35% 2% / 0.65);
+    --shadow-hover: 0 16px 48px hsla(186 95% 48% / 0.3);
+    --glass-bg: hsla(215 32% 10% / 0.35);
+    --glass-border: hsla(0 0% 100% / 0.04);
+    
+    color-scheme: dark;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
