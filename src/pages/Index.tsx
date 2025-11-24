@@ -186,14 +186,14 @@ export default function Index() {
             {/* Actions */}
             <div className="flex items-center gap-3 flex-wrap">
               <Select
-                value={filters.category}
-                onValueChange={(value) => setFilters({ ...filters, category: value })}
+                value={filters.category || "all"}
+                onValueChange={(value) => setFilters({ ...filters, category: value === "all" ? "" : value })}
               >
                 <SelectTrigger className="w-[160px] rounded-xl shadow-soft">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
