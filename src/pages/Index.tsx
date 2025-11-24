@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Search, Heart } from 'lucide-react';
+import { Background3D } from '@/components/Background3D';
 import { PRODUCTS } from '@/data/products';
 import { Product, CartState, Filters as FiltersType } from '@/types/product';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -157,7 +158,9 @@ export default function Index() {
   const wishlistCount = Object.keys(wishlist).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
+    <div className="min-h-screen relative">
+      {/* 3D Background */}
+      <Background3D />
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl shadow-soft">
         <div className="container mx-auto px-4 py-4">
