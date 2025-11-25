@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Search, Heart } from 'lucide-react';
 import { Background3D } from '@/components/Background3D';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { PRODUCTS } from '@/data/products';
 import { Product, CartState, Filters as FiltersType } from '@/types/product';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { ProductCard } from '@/components/ProductCard';
-import { ProductModal } from '@/components/ProductModal';
 import { CartDrawer } from '@/components/CartDrawer';
 import { Filters } from '@/components/Filters';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,8 @@ export default function Index() {
   });
 
   const [cart, setCart] = useLocalStorage<CartState>('shopx_cart', { items: {} });
-  const [wishlist, setWishlist] = useLocalStorage<Record<string, boolean>>('shopx_wishlist', {});
+  const [wishlistArray, setWishlistArray] = useLocalStorage<string[]>('shopx_wishlist', []);
+  const wishlist = new Set(wishlistArray);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -139,23 +140,22 @@ export default function Index() {
   };
 
   const handleToggleWishlist = (productId: string) => {
-    const newWishlist = { ...wishlist };
-    if (newWishlist[productId]) {
-      delete newWishlist[productId];
+    const newWishlist = new Set(wishlist);
+    if (newWishlist.has(productId)) {
+      newWishlist.delete(productId);
       toast.success('Removed from wishlist');
     } else {
-      newWishlist[productId] = true;
+      newWishlist.add(productId);
       toast.success('Added to wishlist ❤️');
     }
-    setWishlist(newWishlist);
+    setWishlistArray(Array.from(newWishlist));
   };
 
-  const handleViewProduct = (product: Product) => {
-    setSelectedProduct(product);
-    setModalOpen(true);
+  const handleViewProduct = (productId: string) => {
+    window.location.href = `/product/${productId}`;
   };
 
-  const wishlistCount = Object.keys(wishlist).length;
+  const wishlistCount = wishlist.size;
 
   return (
     <div className="min-h-screen relative">
@@ -188,6 +188,7 @@ export default function Index() {
 
             {/* Actions */}
             <div className="flex items-center gap-3 flex-wrap">
+              <ThemeToggle />
               <Select
                 value={filters.category || "all"}
                 onValueChange={(value) => setFilters({ ...filters, category: value === "all" ? "" : value })}
@@ -294,14 +295,14 @@ export default function Index() {
                 className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
               >
                 <AnimatePresence mode="popLayout">
-                  {filteredProducts.map((product) => (
+                   {filteredProducts.map((product) => (
                     <ProductCard
                       key={product.id}
                       product={product}
-                      isWishlisted={!!wishlist[product.id]}
+                      isWishlisted={wishlist.has(product.id)}
                       onToggleWishlist={() => handleToggleWishlist(product.id)}
                       onAddToCart={() => handleAddToCart(product)}
-                      onViewDetails={() => handleViewProduct(product)}
+                      onViewDetails={() => handleViewProduct(product.id)}
                     />
                   ))}
                 </AnimatePresence>
@@ -311,15 +312,7 @@ export default function Index() {
         </div>
       </main>
 
-      {/* Product Modal */}
-      <ProductModal
-        product={selectedProduct}
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        isWishlisted={selectedProduct ? !!wishlist[selectedProduct.id] : false}
-        onToggleWishlist={() => selectedProduct && handleToggleWishlist(selectedProduct.id)}
-        onAddToCart={() => selectedProduct && handleAddToCart(selectedProduct)}
-      />
+      {/* Product Modal - Removed, now navigating to detail page */}
     </div>
   );
 }
