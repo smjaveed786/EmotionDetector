@@ -1,12 +1,14 @@
 import React, { useEffect, useCallback } from 'react';
 import { useWebcam } from '@/hooks/useWebcam';
 import { useEmotionAnalysis } from '@/hooks/useEmotionAnalysis';
+import { useFearAlert } from '@/hooks/useFearAlert';
 import { CameraFeed } from './CameraFeed';
 import { InfoCard } from './InfoCard';
 import { EmotionIndicator } from './EmotionIndicator';
 import { SystemStatus } from './SystemStatus';
 import { EMOTION_LABELS } from '@/types/emotion';
 import { User, Smile, Brain, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function EmotionDashboard() {
   const {
@@ -27,6 +29,8 @@ export function EmotionDashboard() {
     resetData,
   } = useEmotionAnalysis();
 
+  const { checkAndAlertFear } = useFearAlert();
+
   // Capture and analyze frames periodically
   useEffect(() => {
     if (!isStreaming) {
@@ -43,6 +47,15 @@ export function EmotionDashboard() {
 
     return () => clearInterval(interval);
   }, [isStreaming, captureFrame, analyzeFrame, resetData]);
+
+  // Check for fear and send alert
+  useEffect(() => {
+    if (emotionData.emotion === 'fear' && emotionData.confidence >= 90 && !emotionData.noFace) {
+      checkAndAlertFear(emotionData).then(() => {
+        toast.error('🚨 Fear detected! Emergency alert sent to guardian.');
+      });
+    }
+  }, [emotionData, checkAndAlertFear]);
 
   const handleStart = useCallback(async () => {
     await startWebcam();
