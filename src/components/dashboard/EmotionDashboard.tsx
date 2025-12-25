@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useWebcam } from '@/hooks/useWebcam';
 import { useEmotionAnalysis } from '@/hooks/useEmotionAnalysis';
 import { CameraFeed } from './CameraFeed';
