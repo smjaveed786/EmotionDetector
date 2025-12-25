@@ -23,7 +23,7 @@ export function useEmotionAnalysis() {
 
   const { checkAndAlertFear } = useFearAlert();
 
-  const analyzeFrame = useCallback(async (imageBase64: string) => {
+  const analyzeFrame = useCallback(async (imageBase64: string, skipThrottle = false) => {
     const now = Date.now();
 
     // Respect cooldown (e.g. after rate-limits)
@@ -33,7 +33,7 @@ export function useEmotionAnalysis() {
     if (inFlightRef.current) return;
 
     // Throttle to reduce AI rate-limits
-    if (now - lastAnalysisRef.current < 10000) return; // max once per 10s
+    if (!skipThrottle && now - lastAnalysisRef.current < 10000) return; // max once per 10s
     lastAnalysisRef.current = now;
 
     inFlightRef.current = true;

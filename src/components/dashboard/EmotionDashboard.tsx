@@ -5,6 +5,7 @@ import { CameraFeed } from './CameraFeed';
 import { InfoCard } from './InfoCard';
 import { EmotionIndicator } from './EmotionIndicator';
 import { SystemStatus } from './SystemStatus';
+import { ImageUpload } from './ImageUpload';
 import { EMOTION_LABELS } from '@/types/emotion';
 import { User, Smile, Brain, Sparkles } from 'lucide-react';
 
@@ -117,6 +118,11 @@ export function EmotionDashboard() {
             <SystemStatus
               isEmergency={emotionData.isEmergency}
               isStreaming={isStreaming}
+            />
+            <ImageUpload
+              onImageSelect={(base64) => analyzeFrame(base64, true)}
+              onClear={resetData}
+              isAnalyzing={isAnalyzing}
             />
           </div>
         </div>
