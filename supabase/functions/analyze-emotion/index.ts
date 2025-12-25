@@ -17,9 +17,9 @@ serve(async (req) => {
       throw new Error('No image data provided');
     }
 
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     const prompt = `Analyze the facial expression in this image and return ONLY a valid JSON object with these exact fields:
@@ -29,7 +29,7 @@ serve(async (req) => {
   "emotion": "<one of: happy, neutral, sad, angry, fear, surprise, disgust>",
   "confidence": <confidence level 0-100>,
   "isSmiling": <true or false>,
-  "isEmergency": <true or false>,
+  "isEmergency": <true if fear detected with high confidence, false otherwise>,
   "noFace": <true if no face detected, false otherwise>
 }
 
@@ -39,44 +39,45 @@ Important:
 - Confidence should reflect how certain you are about the emotion (0-100)
 - If the person appears happy or smiling, set emotion to "happy" and isSmiling to true
 - Only set noFace to true if no human face is visible in the image
+- Set isEmergency to true ONLY if fear is detected with confidence >= 90
 
 Example response:
 {"age": 30, "emotion": "happy", "confidence": 90, "isSmiling": true, "isEmergency": false, "noFace": false}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
+    console.log("Calling Lovable AI gateway for emotion analysis...");
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: prompt,
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`,
                 },
-                {
-                  inline_data: {
-                    mime_type: "image/jpeg",
-                    data: imageBase64,
-                  },
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            maxOutputTokens: 150,
-            temperature: 0.4,
+              },
+            ],
           },
-        }),
-      }
-    );
+        ],
+        max_tokens: 150,
+      }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Gemini API error:", response.status, errorText);
+      console.error("Lovable AI gateway error:", response.status, errorText);
       
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
@@ -84,44 +85,27 @@ Example response:
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (response.status === 401 || response.status === 403) {
-        return new Response(JSON.stringify({ 
-          error: "Invalid or missing Gemini API key. Please check GEMINI_API_KEY in Supabase Edge Function secrets.",
-          details: errorText 
-        }), {
-          status: 400, // Return 400 instead of 401 to avoid confusion with Supabase auth
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }), {
+          status: 402,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+      throw new Error(`AI gateway error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log("Lovable AI response:", JSON.stringify(data, null, 2));
     
-    // Log the response for debugging (remove in production if needed)
-    console.log("Gemini API response:", JSON.stringify(data, null, 2));
-    
-    if (data.error) {
-      console.error("Gemini API error:", data.error);
-      throw new Error(`Gemini API error: ${data.error.message || JSON.stringify(data.error)}`);
-    }
-    
-    // Handle Gemini API response format
-    const candidates = data.candidates || [];
-    if (candidates.length === 0) {
-      console.error("No candidates in Gemini response");
-      throw new Error("No response from Gemini API");
-    }
-    
-    const candidate = candidates[0];
-    const content = candidate.content?.parts?.[0]?.text || "";
+    // Extract the content from the response
+    const content = data.choices?.[0]?.message?.content || "";
     
     if (!content) {
-      console.error("Empty content in Gemini response", candidate);
-      throw new Error("Empty response from Gemini API");
+      console.error("Empty content in AI response");
+      throw new Error("Empty response from AI");
     }
     
-    console.log("Gemini response content:", content);
+    console.log("AI response content:", content);
     
     // Parse the JSON response from the AI
     let analysisResult;
@@ -142,6 +126,11 @@ Example response:
       // Validate the result has required fields
       if (!analysisResult.emotion) {
         throw new Error("Invalid response format: missing emotion");
+      }
+      
+      // Ensure isEmergency is set correctly for fear
+      if (analysisResult.emotion === 'fear' && analysisResult.confidence >= 90) {
+        analysisResult.isEmergency = true;
       }
       
       console.log("Parsed analysis result:", analysisResult);
