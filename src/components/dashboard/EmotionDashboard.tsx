@@ -43,7 +43,7 @@ export function EmotionDashboard() {
       if (frame) {
         analyzeFrame(frame);
       }
-    }, 6500); // Slightly slower than hook throttle to avoid bursts
+    }, 5000); // Analyze every 5 seconds to avoid rate limits
 
     return () => clearInterval(interval);
   }, [isStreaming, captureFrame, analyzeFrame, resetData]);
