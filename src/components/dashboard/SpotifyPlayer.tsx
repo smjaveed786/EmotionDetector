@@ -21,6 +21,7 @@ export function SpotifyPlayer({ emotion, language, onLanguageChange, isVisible }
 
         // We update the playlist ID based on emotion
         if (emotion === 'angry') {
+            console.log('Anger detected! Switching to calming playlist for:', language);
             setPlaylistId(SPOTIFY_PLAYLISTS[language].angry);
         } else {
             // Optional: revert to default or keep playing calming music?
@@ -61,7 +62,8 @@ export function SpotifyPlayer({ emotion, language, onLanguageChange, isVisible }
             <CardContent>
                 <div className="rounded-lg overflow-hidden bg-black/40">
                     <iframe
-                        src={`https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator&theme=0`}
+                        key={playlistId}
+                        src={`https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator&theme=0&autoplay=1`}
                         width="100%"
                         height="152"
                         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
