@@ -16,41 +16,55 @@ export function useEmotionAnalysis() {
   const [emotionData, setEmotionData] = useState<EmotionData>(DEFAULT_DATA);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const lastAnalysisRef = useRef<number>(0);
+  const cooldownUntilRef = useRef<number>(0);
+  const inFlightRef = useRef(false);
+
   const { checkAndAlertFear } = useFearAlert();
 
   const analyzeFrame = useCallback(async (imageBase64: string) => {
-    // Throttle to max once per 4 seconds to avoid rate limits
     const now = Date.now();
-    if (now - lastAnalysisRef.current < 4000) {
-      return;
-    }
+
+    // Respect cooldown (e.g. after rate-limits)
+    if (now < cooldownUntilRef.current) return;
+
+    // Avoid overlapping calls
+    if (inFlightRef.current) return;
+
+    // Throttle to reduce AI rate-limits
+    if (now - lastAnalysisRef.current < 10000) return; // max once per 10s
     lastAnalysisRef.current = now;
 
+    inFlightRef.current = true;
     setIsAnalyzing(true);
     setError(null);
 
     try {
-      console.log('Calling analyze-emotion function...');
       const { data, error: fnError } = await supabase.functions.invoke('analyze-emotion', {
         body: { imageBase64 },
       });
 
-      console.log('Function response:', { data, fnError });
-
-      if (fnError) {
-        console.error('Function error:', fnError);
-        throw fnError;
-      }
-
+      if (fnError) throw fnError;
       if (!data) {
-        console.error('No data received from function');
         setError('No response from analysis service');
         return;
       }
 
+      // Handle rate-limit without crashing the UI
+      if (data.rateLimited) {
+        const retryAfterSeconds = Number(data.retryAfterSeconds ?? 60);
+        cooldownUntilRef.current = Date.now() + retryAfterSeconds * 1000;
+        setError(data.error ?? 'Rate limit exceeded, please try again later.');
+        return;
+      }
+
+      if (data.paymentRequired) {
+        setError(data.error ?? 'Payment required for AI requests.');
+        return;
+      }
+
       if (data.error) {
-        console.error('Error in response:', data.error);
         setError(data.error);
         return;
       }
@@ -64,26 +78,14 @@ export function useEmotionAnalysis() {
         noFace: data.noFace ?? false,
       };
 
-      console.log('Setting emotion data:', newEmotionData);
       setEmotionData(newEmotionData);
-
-      // Check for fear emotion and send emergency email if needed
       checkAndAlertFear(newEmotionData);
     } catch (err) {
-      console.error('Analysis error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Analysis failed';
       setError(errorMessage);
-      
-      // Set default data on error
-      setEmotionData({
-        age: null,
-        emotion: 'neutral',
-        confidence: 0,
-        isSmiling: false,
-        isEmergency: false,
-        noFace: true,
-      });
+      setEmotionData(DEFAULT_DATA);
     } finally {
+      inFlightRef.current = false;
       setIsAnalyzing(false);
     }
   }, [checkAndAlertFear]);

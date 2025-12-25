@@ -78,19 +78,34 @@ Example response:
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Lovable AI gateway error:", response.status, errorText);
-      
+
+      // IMPORTANT: return 200 with a structured payload so the web client can handle it
+      // without the Supabase Functions client throwing a non-2xx error.
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({
+            rateLimited: true,
+            retryAfterSeconds: 60,
+            error: "Rate limit exceeded, please try again later.",
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
+
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({
+            paymentRequired: true,
+            error: "Payment required for AI requests.",
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
+
       throw new Error(`AI gateway error: ${response.status} - ${errorText}`);
     }
 
