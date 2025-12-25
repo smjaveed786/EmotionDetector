@@ -59,12 +59,20 @@ export function CameraFeed({
           )}
           
           {isStreaming && (
-            <div className="absolute top-3 left-3 flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
-              </span>
-              <span className="text-xs font-medium text-destructive">LIVE</span>
+            <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                </span>
+                <span className="text-xs font-medium text-destructive">LIVE</span>
+              </div>
+
+              {error && (
+                <div className="text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-2 py-1">
+                  {error}
+                </div>
+              )}
             </div>
           )}
         </div>

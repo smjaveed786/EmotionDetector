@@ -17,12 +17,19 @@ export function useEmotionAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastAnalysisRef = useRef<number>(0);
+  const cooldownUntilRef = useRef<number>(0);
   const { checkAndAlertFear } = useFearAlert();
 
   const analyzeFrame = useCallback(async (imageBase64: string) => {
-    // Throttle to max once per 4 seconds to avoid rate limits
     const now = Date.now();
-    if (now - lastAnalysisRef.current < 4000) {
+
+    // Cooldown after rate limiting
+    if (now < cooldownUntilRef.current) {
+      return;
+    }
+
+    // Throttle to max once per 6 seconds to avoid rate limits
+    if (now - lastAnalysisRef.current < 6000) {
       return;
     }
     lastAnalysisRef.current = now;
@@ -39,6 +46,12 @@ export function useEmotionAnalysis() {
       console.log('Function response:', { data, fnError });
 
       if (fnError) {
+        const status = (fnError as any)?.context?.status ?? (fnError as any)?.status;
+        if (status === 429) {
+          cooldownUntilRef.current = Date.now() + 30000; // 30s backoff
+          setError('Rate limit reached. Pausing analysis for 30 seconds.');
+          return;
+        }
         console.error('Function error:', fnError);
         throw fnError;
       }
